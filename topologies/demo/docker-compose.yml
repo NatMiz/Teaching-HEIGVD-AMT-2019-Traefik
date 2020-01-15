@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    image: traefik:v2.1.2
+    command: --api.insecure=true --providers.docker --providers.docker.exposedbydefault=false
+
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "2020:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+      
+  blue:
+    build: ../../images/blue
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blue.rule=Host(`www.colors.com`) && PathPrefix(`/blue`)"
+      - "traefik.http.middlewares.strip-blue.stripprefix.prefixes=/blue"
+      - "traefik.http.routers.blue.middlewares=strip-blue"
+  yellow:
+    build: ../../images/yellow
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yellow.rule=Host(`www.colors.com`) && PathPrefix(`/yellow`)"
+      - "traefik.http.middlewares.strip-yellow.stripprefix.prefixes=/yellow"
+      - "traefik.http.routers.yellow.middlewares=strip-yellow"
+      
+    
